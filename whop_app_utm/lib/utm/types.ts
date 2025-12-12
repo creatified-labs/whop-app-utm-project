@@ -59,3 +59,18 @@ export type SourceMetrics = {
 	orders: number;
 	revenue: number;
 };
+
+export type CampaignMetrics = {
+	utmCampaign: string;
+	clicks: number;
+	orders: number;
+	revenue: number;
+	conversionRate: number;
+};
+
+export type DeviceMetrics = {
+	deviceType: string;
+	clicks: number;
+	orders: number;
+	revenue: number;
+};

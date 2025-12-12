@@ -7,6 +7,8 @@ import { LinksTable } from "@/components/links/LinksTable";
 import type { TrackingLink } from "@/lib/utm/types";
 import { useCurrentPlan } from "@/lib/useCurrentPlan";
 import { formatLimit } from "@/lib/plans";
+import { FrostedInput } from "@/components/ui/FrostedInput";
+import { FrostedSelect } from "@/components/ui/FrostedSelect";
 
 type AdvancedLinkModalProps = {
 	onClose: () => void;
@@ -878,8 +880,8 @@ export default function AdvancedLinksPage() {
 				)}
 			</div>
 			{pendingArchive && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="mx-4 w-full max-w-md rounded-2xl bg-card border border-border shadow-xl">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+					<div className="mx-4 w-full max-w-md rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl">
 						<div className="px-6 pt-5 pb-4">
 							<h2 className="text-lg font-semibold text-foreground mb-2">
 								Archive link
@@ -910,8 +912,8 @@ export default function AdvancedLinksPage() {
 			)}
 
 			{pendingDelete && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="mx-4 w-full max-w-md rounded-2xl bg-card border border-border shadow-xl">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+					<div className="mx-4 w-full max-w-md rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl">
 						<div className="px-6 pt-5 pb-4">
 							<h2 className="text-lg font-semibold text-foreground mb-2">
 								Delete link
@@ -961,8 +963,8 @@ export default function AdvancedLinksPage() {
 			)}
 
 			{isUpgradeModalOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="mx-4 w-full max-w-md rounded-2xl bg-card border border-border shadow-xl p-5">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+					<div className="mx-4 w-full max-w-md rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl p-5">
 						<h2 className="text-base font-semibold text-foreground mb-2">
 							Upgrade to add more links
 						</h2>
@@ -1089,6 +1091,16 @@ function AdvancedLinkModal({
 			slug = `advanced-${Date.now()}`;
 		}
 
+		// Get session token from cookie
+		const getSessionToken = () => {
+			if (typeof document === "undefined") return null;
+			const match = document.cookie.match(/utm_session=([^;]+)/);
+			return match ? match[1] : null;
+		};
+
+		const sessionToken = getSessionToken();
+
+		// ALWAYS call checkout API for checkout links to ensure UTM tracking
 		if (
 			!useCustomDestination &&
 			destinationType === "checkout" &&
@@ -1101,6 +1113,12 @@ function AdvancedLinkModal({
 					body: JSON.stringify({
 						planId: selectedProduct.checkoutId,
 						waLinkId: linkId,
+						metadata: {
+							utm_source: cleanUtmSource || undefined,
+							utm_medium: cleanUtmMedium || undefined,
+							utm_campaign: cleanUtmCampaign || undefined,
+							session_token: sessionToken || undefined,
+						},
 					}),
 				});
 
@@ -1108,9 +1126,19 @@ function AdvancedLinkModal({
 					const data = (await res.json()) as { purchaseUrl?: string };
 					if (typeof data.purchaseUrl === "string" && data.purchaseUrl.trim()) {
 						dest = data.purchaseUrl.trim();
+						console.log("[AdvancedLinkModal] Checkout URL created with UTM metadata:", {
+							linkId,
+							utm_source: cleanUtmSource,
+							utm_medium: cleanUtmMedium,
+							utm_campaign: cleanUtmCampaign,
+							session_token: sessionToken,
+						});
 					}
+				} else {
+					console.error("[AdvancedLinkModal] Failed to create checkout session:", await res.text());
 				}
-			} catch {
+			} catch (error) {
+				console.error("[AdvancedLinkModal] Error creating checkout session:", error);
 				// If session creation fails, fall back to the static checkout URL.
 			}
 		}
@@ -1146,8 +1174,8 @@ function AdvancedLinkModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md">
-			<div className="w-full max-w-lg rounded-xl bg-background text-foreground border border-border shadow-[var(--glass-shadow)] p-5 sm:p-6">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+			<div className="w-full max-w-lg rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl p-5 sm:p-6 animate-in zoom-in-95 duration-200">
 				<div className="mb-4 flex items-center justify-between">
 					<h2 className="text-sm font-semibold">New advanced tracking link</h2>
 					<button
@@ -1161,18 +1189,14 @@ function AdvancedLinkModal({
 
 				<form onSubmit={handleSubmit} className="space-y-3 text-xs">
 					<div className="grid grid-cols-1 gap-3">
-						<label className="flex flex-col gap-1">
-							<span className="text-[11px] font-medium text-muted-foreground">
-								Link name
-							</span>
-							<input
-								type="text"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								placeholder="Retargeting LP - TikTok ads"
-								className="h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-							/>
-						</label>
+						<FrostedInput
+							label="Link name"
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Retargeting LP - TikTok ads"
+							className="h-9 text-[11px]"
+						/>
 
 						{!useCustomDestination && productOptions.length > 0 && (
 							<label className="flex flex-col gap-1">
@@ -1252,15 +1276,13 @@ function AdvancedLinkModal({
 
 						{planId === "pro" && useCustomDestination && (
 							<label className="mt-1 flex flex-col gap-1">
-								<span className="text-[11px] font-medium text-muted-foreground">
-									Custom destination URL
-								</span>
-								<input
+								<FrostedInput
+									label="Custom destination URL"
 									type="text"
 									value={customDestination}
 									onChange={(e) => setCustomDestination(e.target.value)}
-									placeholder="https://example.com/landing-page"
-									className="h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+									placeholder="https://your-landing-page.com"
+									className="h-9 text-[11px]"
 								/>
 							</label>
 						)}
@@ -1282,41 +1304,35 @@ function AdvancedLinkModal({
 						{canUseUtmFields ? (
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 								<label className="flex flex-col gap-1">
-									<span className="text-[11px] font-medium text-muted-foreground">
-										UTM source
-									</span>
-									<input
+									<FrostedInput
+										label="UTM source"
 										type="text"
 										value={utmSource}
 										onChange={(e) => setUtmSource(e.target.value)}
-										placeholder="facebook / tiktok / email"
-										className="h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+										placeholder="tiktok"
+										className="h-9 text-[11px]"
 									/>
 								</label>
 
 								<label className="flex flex-col gap-1">
-									<span className="text-[11px] font-medium text-muted-foreground">
-										UTM medium
-									</span>
-									<input
+									<FrostedInput
+										label="UTM medium"
 										type="text"
 										value={utmMedium}
 										onChange={(e) => setUtmMedium(e.target.value)}
-										placeholder="cpc / social / feed"
-										className="h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+										placeholder="cpc"
+										className="h-9 text-[11px]"
 									/>
 								</label>
 
 								<label className="flex flex-col gap-1">
-									<span className="text-[11px] font-medium text-muted-foreground">
-										UTM campaign
-									</span>
-									<input
+									<FrostedInput
+										label="UTM campaign"
 										type="text"
 										value={utmCampaign}
 										onChange={(e) => setUtmCampaign(e.target.value)}
-										placeholder="launch_q1 / retargeting"
-										className="h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+										placeholder="summer_sale"
+										className="h-9 text-[11px]"
 									/>
 								</label>
 							</div>

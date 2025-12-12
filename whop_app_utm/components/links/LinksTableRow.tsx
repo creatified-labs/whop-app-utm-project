@@ -156,10 +156,10 @@ export function LinksTableRow({
 	};
 
 	return (
-		<tr className="transition-colors hover:bg-card/60">
+		<tr className="transition-colors hover:bg-white/5 dark:hover:bg-white/[0.02]">
 			{/* Name */}
 			<td
-				className="sticky left-0 z-10 px-4 py-3 align-top bg-card border-b border-transparent relative"
+				className="sticky left-0 z-10 px-4 py-3 align-top bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-transparent relative"
 				style={{ width: columnWidths.name }}
 			>
 				<div className="flex flex-col gap-1 min-w-0">
@@ -179,7 +179,7 @@ export function LinksTableRow({
 			{/* Product */}
 			{visibleColumns.product && (
 				<td
-					className="sticky z-10 px-4 py-3 align-top text-sm text-muted-foreground bg-card border-b border-transparent relative"
+					className="sticky z-10 px-4 py-3 align-top text-sm text-muted-foreground bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-transparent relative"
 					style={{
 						width: columnWidths.product,
 						left: columnWidths.name,
@@ -326,7 +326,7 @@ export function LinksTableRow({
 								<Settings className="h-3.5 w-3.5" />
 							</button>
 							{isActionsOpen && (
-								<div className="absolute right-0 top-8 z-40 w-44 rounded-xl border border-border bg-card text-foreground shadow-lg text-xs overflow-hidden">
+								<div className="absolute right-0 top-8 z-40 w-44 rounded-xl border border-white/20 dark:border-white/10 bg-white/95 dark:bg-black/95 backdrop-blur-xl text-foreground shadow-lg text-xs overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150">
 									{onRestoreLink && (
 										<button
 											type="button"

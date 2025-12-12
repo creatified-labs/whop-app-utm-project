@@ -3,7 +3,7 @@ import type { Payment } from "@whop/sdk/resources.js";
 import type { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { companies, advancedLinks, advancedLinkOrders } from "@/lib/db/schema";
+import { companies, advancedLinks, advancedLinkOrders, advancedLinkSessions } from "@/lib/db/schema";
 import type { PlanId } from "@/lib/plans";
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -505,10 +505,51 @@ async function syncAdvancedOrderFromPayload(payload: any, context: string) {
 			return;
 		}
 
+		// Extract UTM parameters and session token from metadata
+		const extractMetadata = (payload: any) => {
+			const root = payload as any;
+			const metadata =
+				root?.data?.metadata ??
+				root?.metadata ??
+				root?.data?.payment?.metadata ??
+				root?.payment?.metadata ??
+				{};
+
+			return {
+				utmSource: typeof metadata.utm_source === "string" ? metadata.utm_source : null,
+				utmMedium: typeof metadata.utm_medium === "string" ? metadata.utm_medium : null,
+				utmCampaign: typeof metadata.utm_campaign === "string" ? metadata.utm_campaign : null,
+				sessionToken: typeof metadata.session_token === "string" ? metadata.session_token : null,
+			};
+		};
+
+		// Extract whop_user_id from payload
+		const extractWhopUserId = (payload: any): string | null => {
+			const root = payload as any;
+			return (
+				root?.data?.user?.id ??
+				root?.user?.id ??
+				root?.data?.buyer_id ??
+				root?.buyer_id ??
+				root?.data?.user_id ??
+				root?.user_id ??
+				null
+			);
+		};
+
+		const { utmSource, utmMedium, utmCampaign, sessionToken } = extractMetadata(payload);
+		const whopUserId = extractWhopUserId(payload);
+
+		// Insert order with UTM data
 		await db.insert(advancedLinkOrders).values({
 			advancedLinkId,
 			amountCents,
 			currency,
+			utmSource,
+			utmMedium,
+			utmCampaign,
+			whopUserId,
+			sessionId: sessionToken,
 		});
 
 		console.log("[ADVANCED ORDER UPSERTED]", {
@@ -516,7 +557,32 @@ async function syncAdvancedOrderFromPayload(payload: any, context: string) {
 			advancedLinkId,
 			amountCents,
 			currency,
+			utmSource,
+			utmMedium,
+			utmCampaign,
+			whopUserId,
+			sessionToken,
 		});
+
+		// Update session with conversion timestamp if session_token exists
+		if (sessionToken) {
+			try {
+				await db
+					.update(advancedLinkSessions)
+					.set({ convertedAt: new Date() })
+					.where(eq(advancedLinkSessions.sessionToken, sessionToken));
+
+				console.log("[SESSION CONVERTED]", {
+					sessionToken,
+					advancedLinkId,
+				});
+			} catch (error) {
+				console.error("[webhooks] Failed to update session conversion", {
+					sessionToken,
+					error,
+				});
+			}
+		}
 	} catch (error) {
 		console.error("[webhooks] Failed to sync advanced order from payload", {
 			context,

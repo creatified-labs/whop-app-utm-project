@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/serverClient";
 import { hashIp } from "@/lib/hashIp";
 import { db } from "@/lib/db/client";
-import { companySettings } from "@/lib/db/schema";
+import { companySettings, advancedLinkSessions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import { parseUserAgent, getCountryFromIP } from "@/lib/device-detection";
 
 export async function GET(
 	req: NextRequest,
@@ -56,6 +58,53 @@ export async function GET(
 
 				const ipHash = hashIp(ip);
 
+				// Generate session token and parse device info
+				const sessionToken = randomUUID();
+				const deviceInfo = parseUserAgent(userAgent);
+
+				// Try to get country from IP (async, but don't block redirect)
+				let countryCode: string | null = null;
+				try {
+					// First check Cloudflare header (if behind Cloudflare)
+					countryCode = req.headers.get("cf-ipcountry") ?? null;
+
+					// If not available, try IP geolocation API
+					if (!countryCode) {
+						countryCode = await getCountryFromIP(ip);
+					}
+				} catch (error) {
+					console.warn("[t/[slug]] Failed to get country code:", error);
+				}
+
+				// Extract UTM params from advanced link
+				const utmSource = (advancedLink as { utm_source?: string | null }).utm_source ?? null;
+				const utmMedium = (advancedLink as { utm_medium?: string | null }).utm_medium ?? null;
+				const utmCampaign = (advancedLink as { utm_campaign?: string | null }).utm_campaign ?? null;
+
+				// Store session in database
+				try {
+					await db.insert(advancedLinkSessions).values({
+						advancedLinkId: (advancedLink as { id: string }).id,
+						utmSource,
+						utmMedium,
+						utmCampaign,
+						sessionToken,
+						deviceType: deviceInfo.deviceType,
+						browser: deviceInfo.browser,
+						os: deviceInfo.os,
+						countryCode,
+					});
+					console.log("[t/[slug]] Session created:", {
+						sessionToken,
+						deviceType: deviceInfo.deviceType,
+						browser: deviceInfo.browser,
+						os: deviceInfo.os,
+						countryCode,
+					});
+				} catch (error) {
+					console.error("[t/[slug]] Failed to create session:", error);
+				}
+
 				supabase
 					.from("advanced_link_clicks")
 					.insert({
@@ -77,8 +126,20 @@ export async function GET(
 					(advancedLink as { meta_pixel_enabled?: boolean }).meta_pixel_enabled,
 				);
 
-				if (!metaPixelEnabled) {
-					return NextResponse.redirect(destination, 307);
+				// Create response with session cookie
+				const response = metaPixelEnabled
+					? null
+					: NextResponse.redirect(destination, 307);
+
+				if (!metaPixelEnabled && response) {
+					// Set cookie with 7 day expiry
+					response.cookies.set("utm_session", sessionToken, {
+						maxAge: 60 * 60 * 24 * 7, // 7 days
+						path: "/",
+						sameSite: "lax",
+						secure: process.env.NODE_ENV === "production",
+					});
+					return response;
 				}
 
 				const companyId = process.env.WHOP_COMPANY_ID;
@@ -116,6 +177,9 @@ export async function GET(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="refresh" content="0;url=${safeDestination}" />
     <script>
+      // Set session cookie
+      document.cookie = "utm_session=${sessionToken}; path=/; max-age=" + (60 * 60 * 24 * 7) + "; SameSite=Lax" + (window.location.protocol === 'https:' ? "; Secure" : "");
+      
       (function(f,b,e,v,n,t,s){
         if(f.fbq)return;n=f.fbq=function(){n.callMethod?
         n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -145,13 +209,16 @@ export async function GET(
   </body>
 </html>`;
 
-				return new Response(html, {
+				const htmlResponse = new Response(html, {
 					status: 200,
 					headers: {
 						"Content-Type": "text/html; charset=utf-8",
 						"Cache-Control": "no-store, max-age=0",
+						"Set-Cookie": `utm_session=${sessionToken}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,
 					},
 				});
+
+				return htmlResponse;
 			}
 		} catch (error) {
 			console.error("Unhandled error fetching advanced_links by slug", error);

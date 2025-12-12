@@ -149,13 +149,13 @@ export function LinksTable({
 	}));
 
 	return (
-		<div className="mt-4 w-full min-h-[70vh] rounded-2xl bg-card/95 backdrop-blur-2xl flex flex-col overflow-hidden">
+		<div className="mt-4 w-full min-h-[70vh] rounded-2xl bg-white/5 dark:bg-black/5 backdrop-blur-xl border border-white/10 dark:border-white/5 flex flex-col overflow-hidden">
 			<div className="w-full flex-1 overflow-x-auto">
 				<table className="links-table w-full h-full table-fixed text-sm text-card-foreground border-separate border-spacing-0">
-					<thead className="bg-card">
+					<thead className="bg-white/5 dark:bg-black/5 backdrop-blur-xl">
 						<tr className="text-[11px] uppercase tracking-[0.16em] text-black dark:text-white">
 							<th
-								className="sticky left-0 z-20 px-4 py-2 text-left bg-card relative border-r border-b-2 border-border"
+								className="sticky left-0 z-30 px-4 py-2 text-left bg-white/10 dark:bg-black/10 backdrop-blur-2xl relative border-r border-b-2 border-border"
 								style={{ width: columnWidths.name }}
 							>
 								<span className="block whitespace-nowrap">Name</span>
@@ -166,7 +166,7 @@ export function LinksTable({
 							</th>
 							{visibleColumns.product && (
 								<th
-									className="sticky z-20 px-4 py-2 text-left bg-card relative border-r border-b-2 border-border"
+									className="sticky z-30 px-4 py-2 text-left bg-white/10 dark:bg-black/10 backdrop-blur-2xl relative border-r border-b-2 border-border"
 									style={{
 										width: columnWidths.product,
 										left: columnWidths.name,

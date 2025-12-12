@@ -7,7 +7,7 @@ export function AppFooter() {
 	const { planId, capabilities, isLocalhost, setPlanId } = useCurrentPlan();
 
 	return (
-		<footer className="border-t border-border bg-background/95">
+		<footer className="border-t border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-2xl">
 			<div className="max-w-7xl mx-auto px-4 md:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-muted-foreground">
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
 					<span>{capabilities.label} plan</span>
@@ -21,7 +21,7 @@ export function AppFooter() {
 				</div>
 				<div className="flex items-center gap-3">
 					{isLocalhost && (
-						<div className="inline-flex items-center rounded-full border border-border bg-card px-1 py-0.5">
+						<div className="inline-flex items-center rounded-full border border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-xl px-1 py-0.5">
 							{ALL_PLANS.map((id) => {
 								const plan = getPlanCapabilities(id);
 								const isActive = id === planId;
@@ -30,9 +30,9 @@ export function AppFooter() {
 										key={id}
 										type="button"
 										onClick={() => setPlanId(id)}
-										className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${isActive
-												? "bg-foreground text-background"
-												: "text-muted-foreground hover:bg-accent/40"
+										className={`px-2 py-0.5 text-[10px] rounded-full transition-all duration-200 ${isActive
+											? "bg-black dark:bg-white text-white dark:text-black"
+											: "text-muted-foreground hover:bg-white/20 dark:hover:bg-white/10"
 											}`}
 									>
 										{plan.label}

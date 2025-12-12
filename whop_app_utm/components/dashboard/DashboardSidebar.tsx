@@ -10,6 +10,7 @@ type NavKey =
 	| "overview"
 	| "links"
 	| "advancedLinks"
+	| "analytics"
 	| "presets"
 	| "reports"
 	| "settings";
@@ -31,6 +32,7 @@ export function DashboardSidebar() {
 		{ key: "overview", href: base, label: "Dashboard" },
 		{ key: "links", href: `${base}/tracking-links`, label: "Whop tracking links" },
 		{ key: "advancedLinks", href: `${base}/advanced-links`, label: "Advanced tracking links" },
+		{ key: "analytics", href: `${base}/analytics`, label: "Analytics" },
 		{ key: "settings", href: `${base}/settings`, label: "Settings" },
 	];
 
@@ -48,6 +50,9 @@ export function DashboardSidebar() {
 		}
 		if (pathname.startsWith(`${root}/advanced-links`)) {
 			return "advancedLinks";
+		}
+		if (pathname.startsWith(`${root}/analytics`)) {
+			return "analytics";
 		}
 		if (pathname.startsWith(`${root}/settings`)) {
 			return "settings";
@@ -75,6 +80,8 @@ export function DashboardSidebar() {
 				return <LinkIcon size={18} strokeWidth={2} />;
 			case "advancedLinks":
 				return <Link2 size={18} strokeWidth={2} />;
+			case "analytics":
+				return <BarChart3 size={18} strokeWidth={2} />;
 			case "presets":
 				return <TrendingUp size={18} strokeWidth={2} />;
 			case "reports":
@@ -94,7 +101,7 @@ export function DashboardSidebar() {
 
 	return (
 		<header className="fixed inset-x-0 top-0 z-40 flex justify-center pt-3 pointer-events-none">
-			<div className="max-w-4xl w-full mx-auto border border-white/40 dark:border-white/10 rounded-3xl px-4 sm:px-6 py-3 bg-white/70 dark:bg-black/40 backdrop-blur supports-[backdrop-filter]:bg-white/40 dark:supports-[backdrop-filter]:bg-black/40 relative shadow-lg pointer-events-auto">
+			<div className="max-w-4xl w-full mx-auto border border-white/40 dark:border-white/10 rounded-3xl px-4 sm:px-6 py-3 bg-white/70 dark:bg-black/40 backdrop-blur-2xl relative shadow-lg pointer-events-auto">
 				<span className="absolute -top-3 left-4 inline-flex items-center rounded-full bg-black text-white dark:bg-white dark:text-black px-3 py-0.5 text-[11px] font-medium">
 					{capabilities.label} plan
 				</span>
@@ -119,9 +126,9 @@ export function DashboardSidebar() {
 									key={item.key}
 									href={item.href}
 									aria-label={item.label}
-									className={`inline-flex items-center justify-center gap-2 rounded-2xl font-sans text-[14px] leading-5 font-semibold h-9 px-4 whitespace-nowrap transform transition-transform hover:-translate-y-0.5 hover:shadow-md ${active
-										? "!bg-[#050B1E] !text-white dark:!bg-white dark:!text-black shadow-sm"
-										: "text-gray-900 dark:text-neutral-50 dark:hover:bg-white/10"
+									className={`inline-flex items-center justify-center gap-2 rounded-2xl font-sans text-[14px] leading-5 font-semibold h-9 px-4 whitespace-nowrap transition-all duration-200 ${active
+										? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
+										: "text-gray-900 dark:text-neutral-50 hover:bg-white/10 dark:hover:bg-white/10"
 										}`}
 								>
 									{icon && <span className="inline-flex">{icon}</span>}
@@ -140,17 +147,17 @@ export function DashboardSidebar() {
 									type="button"
 									aria-label={settingsItem.label}
 									onClick={() => setIsSettingsMenuOpen((open) => !open)}
-									className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors"
+									className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-700 dark:text-neutral-200 hover:bg-white/10 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
 								>
 									<Settings className="h-5 w-5" />
 								</button>
 								{isSettingsMenuOpen && (
-									<div className="absolute right-0 mt-2 w-44 rounded-xl border border-border bg-white dark:bg-[#111111] shadow-lg z-40 py-1 text-xs">
+									<div className="absolute right-0 mt-2 w-44 rounded-xl border border-white/20 dark:border-white/10 bg-white/95 dark:bg-black/95 backdrop-blur-xl shadow-lg z-40 py-1 text-xs animate-in slide-in-from-top-2 fade-in duration-150">
 										<Link
 											key="account-settings"
 											href={settingsItem.href}
 											onClick={() => setIsSettingsMenuOpen(false)}
-											className="flex w-full items-center justify-between px-3 py-2 text-foreground hover:bg-gray-50 dark:hover:bg-white/10"
+											className="flex w-full items-center justify-between px-3 py-2 text-foreground hover:bg-white/10 dark:hover:bg-white/10 transition-colors"
 										>
 											<span>Account settings</span>
 										</Link>
@@ -158,7 +165,7 @@ export function DashboardSidebar() {
 											key="pricing"
 											href="/pricing"
 											onClick={() => setIsSettingsMenuOpen(false)}
-											className="flex w-full items-center justify-between px-3 py-2 text-foreground hover:bg-gray-50 dark:hover:bg-white/10"
+											className="flex w-full items-center justify-between px-3 py-2 text-foreground hover:bg-white/10 dark:hover:bg-white/10 transition-colors"
 										>
 											<span>Pricing</span>
 										</Link>
@@ -171,7 +178,7 @@ export function DashboardSidebar() {
 						<button
 							type="button"
 							aria-label="Open navigation menu"
-							className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-colors sm:hidden"
+							className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-700 dark:text-neutral-200 hover:bg-white/10 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-all duration-200 sm:hidden"
 							onClick={() => setIsMobileMenuOpen((open) => !open)}
 						>
 							<MenuIcon className="h-5 w-5" />
@@ -181,7 +188,7 @@ export function DashboardSidebar() {
 
 				{/* Mobile navigation menu (primary items only, no settings) */}
 				{isMobileMenuOpen && (
-					<div className="mt-2 sm:hidden border-t border-[#292929]/60 pt-2">
+					<div className="mt-2 sm:hidden border-t border-white/10 pt-2 animate-in slide-in-from-top-2 fade-in duration-200">
 						<nav className="flex flex-col gap-1">
 							{primaryItems.map((item) => {
 								const active = isActiveKey(item.key);
@@ -193,9 +200,9 @@ export function DashboardSidebar() {
 										href={item.href}
 										aria-label={item.label}
 										onClick={() => setIsMobileMenuOpen(false)}
-										className={`w-full inline-flex items-center justify-between gap-3 rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${active
-											? "!bg-[#050B1E] !text-white dark:!bg-white dark:!text-black shadow-sm"
-											: "text-gray-900 dark:text-neutral-50 dark:hover:bg-white/10"
+										className={`w-full inline-flex items-center justify-between gap-3 rounded-2xl px-4 py-2 text-sm font-medium transition-all duration-200 ${active
+											? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
+											: "text-gray-900 dark:text-neutral-50 hover:bg-white/10 dark:hover:bg-white/10"
 											}`}
 									>
 										<span className="inline-flex items-center gap-2">

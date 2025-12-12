@@ -29,6 +29,8 @@ export const advancedLinks = pgTable("advanced_links", {
 	utmCampaign: text("utm_campaign"),
 	metaPixelEnabled: boolean("meta_pixel_enabled").notNull().default(false),
 	archived: boolean("archived").notNull().default(false),
+	lastHealthCheck: timestamp("last_health_check", { withTimezone: true }),
+	isHealthy: boolean("is_healthy").default(true),
 	createdAt: text("created_at").notNull(),
 });
 
@@ -116,6 +118,33 @@ export const advancedLinkOrders = pgTable("advanced_link_orders", {
 		.references(() => advancedLinks.id, { onDelete: "cascade" }),
 	amountCents: integer("amount_cents").notNull(),
 	currency: text("currency").notNull(),
+	utmSource: text("utm_source"),
+	utmMedium: text("utm_medium"),
+	utmCampaign: text("utm_campaign"),
+	whopUserId: text("whop_user_id"),
+	sessionId: text("session_id"),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+});
+
+export const advancedLinkSessions = pgTable("advanced_link_sessions", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	advancedLinkId: text("advanced_link_id")
+		.notNull()
+		.references(() => advancedLinks.id, { onDelete: "cascade" }),
+	utmSource: text("utm_source"),
+	utmMedium: text("utm_medium"),
+	utmCampaign: text("utm_campaign"),
+	sessionToken: text("session_token").notNull().unique(),
+	deviceType: text("device_type"),
+	browser: text("browser"),
+	os: text("os"),
+	countryCode: text("country_code"),
+	clickedAt: timestamp("clicked_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+	convertedAt: timestamp("converted_at", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
