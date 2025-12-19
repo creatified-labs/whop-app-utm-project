@@ -33,7 +33,7 @@ export function LinksToolbar({
 					placeholder={placeholder}
 					value={searchValue}
 					onChange={(e) => onSearchChange?.(e.target.value)}
-					className="w-full rounded-xl border border-white/10 dark:border-white/5 bg-white/5 dark:bg-black/5 backdrop-blur-xl pl-11 pr-4 py-2.5 text-sm text-foreground placeholder:text-white/30 dark:placeholder:text-white/20 focus:outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10 transition-all duration-200"
+					className="w-full rounded-xl border border-white/40 dark:border-white/5 bg-white dark:bg-black/5 backdrop-blur-xl pl-11 pr-4 py-2.5 text-sm text-gray-900 dark:text-foreground placeholder:text-gray-500 dark:placeholder:text-white/30 shadow-sm dark:shadow-none focus:outline-none focus:border-[#050B1E]/40 focus:ring-2 focus:ring-[#050B1E]/20 dark:focus:border-white/30 dark:focus:ring-white/10 transition-all duration-200"
 				/>
 			</div>
 

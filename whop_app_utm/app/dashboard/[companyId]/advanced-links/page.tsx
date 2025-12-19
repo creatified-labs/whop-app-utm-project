@@ -3,12 +3,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LinksToolbar } from "@/components/links/LinksToolbar";
+import { StyledLinksTable } from "@/components/links/StyledLinksTable";
 import { LinksTable } from "@/components/links/LinksTable";
-import type { TrackingLink } from "@/lib/utm/types";
+import type { TrackingLink, LinkMetrics } from "@/lib/utm/types";
+import { LinkDetailsModal } from "@/components/links/LinkDetailsModal";
 import { useCurrentPlan } from "@/lib/useCurrentPlan";
 import { formatLimit } from "@/lib/plans";
 import { FrostedInput } from "@/components/ui/FrostedInput";
-import { FrostedSelect } from "@/components/ui/FrostedSelect";
+import { FrostedDropdown } from "@/components/ui/FrostedDropdown";
+import { UTMAutocomplete } from "@/components/ui/UTMAutocomplete";
 
 type AdvancedLinkModalProps = {
 	onClose: () => void;
@@ -163,6 +166,7 @@ export default function AdvancedLinksPage() {
 	const [archiveToast, setArchiveToast] = useState<{ id: string; name?: string } | null>(
 		null,
 	);
+
 	const archiveTimeoutRef = useRef<number | null>(null);
 
 	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -175,6 +179,27 @@ export default function AdvancedLinksPage() {
 	const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
 	const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 	const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+	const [viewMode, setViewMode] = useState<"cards" | "table">(() => {
+		// Initialize from localStorage if available
+		if (typeof window !== "undefined") {
+			try {
+				const stored = window.localStorage.getItem("utm_advanced_links_view_mode");
+				if (stored === "cards" || stored === "table") {
+					return stored;
+				}
+			} catch { }
+		}
+		return "cards";
+	});
+	const [selectedLink, setSelectedLink] = useState<{ link: TrackingLink; metrics?: LinkMetrics } | null>(null);
+
+	// Save view mode preference to localStorage when it changes
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		try {
+			window.localStorage.setItem("utm_advanced_links_view_mode", viewMode);
+		} catch { }
+	}, [viewMode]);
 
 	const { planId, capabilities } = useCurrentPlan();
 	const params = useParams() as { companyId?: string };
@@ -648,27 +673,60 @@ export default function AdvancedLinksPage() {
 							// actually open; when closed, keep the button white with a dark icon.
 							isFilterActive={canUseFilters ? isFiltersOpen : false}
 							rightSlot={
-								<div className="inline-flex h-10 items-center rounded-lg border border-transparent dark:border-border bg-gray-100 dark:bg-[#111111] shadow-sm p-0.5 text-[11px]">
-									<button
-										type="button"
-										className={`h-full px-3 rounded-md transition-colors ${viewArchived === "active"
-											? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
-											: "bg-white text-black dark:bg-[#181818] dark:text-white"
-											}`}
-										onClick={() => setViewArchived("active")}
-									>
-										Active
-									</button>
-									<button
-										type="button"
-										className={`h-full px-3 rounded-md transition-colors ${viewArchived === "archived"
-											? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
-											: "bg-white text-black dark:bg-[#181818] dark:text-white"
-											}`}
-										onClick={() => setViewArchived("archived")}
-									>
-										Archived
-									</button>
+								<div className="flex items-center gap-2">
+									<div className="inline-flex h-10 items-center rounded-lg border border-transparent dark:border-border bg-gray-100 dark:bg-[#111111] shadow-sm p-0.5 text-[11px]">
+										<button
+											type="button"
+											className={`h-full px-3 rounded-md transition-colors ${viewMode === "cards"
+												? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
+												: "bg-white text-black dark:bg-[#181818] dark:text-white"
+												}`}
+											onClick={() => setViewMode("cards")}
+											title="Card view"
+										>
+											<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+												<rect x="3" y="3" width="7" height="7" rx="1" />
+												<rect x="14" y="3" width="7" height="7" rx="1" />
+												<rect x="3" y="14" width="7" height="7" rx="1" />
+												<rect x="14" y="14" width="7" height="7" rx="1" />
+											</svg>
+										</button>
+										<button
+											type="button"
+											className={`h-full px-3 rounded-md transition-colors ${viewMode === "table"
+												? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
+												: "bg-white text-black dark:bg-[#181818] dark:text-white"
+												}`}
+											onClick={() => setViewMode("table")}
+											title="Table view"
+										>
+											<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+											</svg>
+										</button>
+									</div>
+									<div className="inline-flex h-10 items-center rounded-lg border border-transparent dark:border-border bg-gray-100 dark:bg-[#111111] shadow-sm p-0.5 text-[11px]">
+										<button
+											type="button"
+											className={`h-full px-3 rounded-md transition-colors ${viewArchived === "active"
+												? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
+												: "bg-white text-black dark:bg-[#181818] dark:text-white"
+												}`}
+											onClick={() => setViewArchived("active")}
+										>
+											Active
+										</button>
+										<button
+											type="button"
+											className={`h-full px-3 rounded-md transition-colors ${viewArchived === "archived"
+												? "bg-[#050B1E] text-white dark:bg-white dark:text-black shadow-sm"
+												: "bg-white text-black dark:bg-[#181818] dark:text-white"
+												}`}
+											onClick={() => setViewArchived("archived")}
+										>
+											Archived
+										</button>
+									</div>
 								</div>
 							}
 						/>
@@ -857,6 +915,17 @@ export default function AdvancedLinksPage() {
 								</button>
 							)}
 						</div>
+					) : viewMode === "cards" ? (
+						<StyledLinksTable
+							mode="advanced"
+							linksOverride={filteredAdvancedLinks}
+							metricsOverride={[]}
+							onArchiveLink={openArchiveConfirm}
+							onRestoreLink={handleRestoreAdvancedLink}
+							onDeleteLink={openDeleteConfirm}
+							isArchivedView={viewArchived === "archived"}
+							onLinkClick={(link, metrics) => setSelectedLink({ link, metrics })}
+						/>
 					) : (
 						<LinksTable
 							mode="advanced"
@@ -866,6 +935,7 @@ export default function AdvancedLinksPage() {
 							onRestoreLink={handleRestoreAdvancedLink}
 							onDeleteLink={openDeleteConfirm}
 							isArchivedView={viewArchived === "archived"}
+							onLinkClick={(link, metrics) => setSelectedLink({ link, metrics })}
 						/>
 					)}
 				</div>
@@ -876,6 +946,15 @@ export default function AdvancedLinksPage() {
 						onCreate={handleCreateAdvancedLink}
 						productOptions={productOptions}
 						canUseMetaPixel={canUseMetaPixelForAdvancedLinks}
+					/>
+				)}
+
+				{selectedLink && (
+					<LinkDetailsModal
+						link={selectedLink.link}
+						metrics={selectedLink.metrics}
+						onClose={() => setSelectedLink(null)}
+						mode="advanced"
 					/>
 				)}
 			</div>
@@ -1023,6 +1102,32 @@ function AdvancedLinkModal({
 
 	const canStore = !!selectedProduct?.route;
 	const canCheckout = !!selectedProduct?.checkoutId;
+
+	const productDropdownOptions = useMemo(
+		() =>
+			productOptions.map((option) => ({
+				value: option.value,
+				label: option.label,
+				group: option.category ?? undefined,
+			})),
+		[productOptions],
+	);
+
+	const destinationOptions = useMemo(
+		() => [
+			{
+				value: "checkout",
+				label: "Checkout page",
+				disabled: !canCheckout,
+			},
+			{
+				value: "store",
+				label: "Store page",
+				disabled: !canStore,
+			},
+		],
+		[canCheckout, canStore],
+	);
 
 	useEffect(() => {
 		// If the user has chosen a destination that the selected product doesn't
@@ -1175,13 +1280,13 @@ function AdvancedLinkModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-			<div className="w-full max-w-lg rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl p-5 sm:p-6 animate-in zoom-in-95 duration-200">
+			<div className="w-full max-w-lg rounded-2xl bg-white/95 dark:bg-black/10 backdrop-blur-2xl border border-gray-300 dark:border-white/10 shadow-2xl p-5 sm:p-6 animate-in zoom-in-95 duration-200">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-sm font-semibold">New advanced tracking link</h2>
+					<h2 className="text-sm font-semibold text-gray-900 dark:text-white">New advanced tracking link</h2>
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-6 w-6 rounded-full text-xs text-muted-foreground hover:bg-accent transition-colors"
+						className="h-6 w-6 rounded-full text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
 					>
 						✕
 					</button>
@@ -1199,79 +1304,42 @@ function AdvancedLinkModal({
 						/>
 
 						{!useCustomDestination && productOptions.length > 0 && (
-							<label className="flex flex-col gap-1">
-								<span className="text-[11px] font-medium text-muted-foreground">
-									Product / plan label
-								</span>
-								<select
-									value={selectedProductId}
-									onChange={(e) => {
-										setSelectedProductId(e.target.value);
-									}}
-									className="mb-1 h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-								>
-									<option value="">Select product (optional)</option>
-									{Object.entries(
-										productOptions.reduce<Record<string, typeof productOptions>>(
-											(acc, option) => {
-												const key = option.category || "Other";
-												if (!acc[key]) acc[key] = [];
-												acc[key].push(option);
-												return acc;
-											},
-											{},
-										),
-									).map(([groupLabel, options]) => (
-										<optgroup key={groupLabel} label={groupLabel}>
-											{options.map((option) => (
-												<option key={option.value} value={option.value}>
-													{option.label}
-												</option>
-											))}
-										</optgroup>
-									))}
-								</select>
-							</label>
+							<FrostedDropdown
+								label="Product / plan label"
+								value={selectedProductId}
+								onChange={(next) => setSelectedProductId(next)}
+								placeholder="Select product (optional)"
+								options={productDropdownOptions}
+								className="text-[11px]"
+							/>
 						)}
 
 						{planId === "pro" && (
-							<label className="mt-1 inline-flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1">
+							<label className="mt-1 inline-flex items-center gap-2 rounded-md bg-gray-100 dark:bg-white/10 px-2 py-1">
 								<input
 									type="checkbox"
 									checked={useCustomDestination}
 									onChange={(event) =>
 										setUseCustomDestination(event.target.checked)
 									}
-									className="h-3 w-3 rounded border-input text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+									className="h-3 w-3 rounded border-gray-300 dark:border-white/20 text-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								/>
-								<span className="text-[11px] text-muted-foreground">
+								<span className="text-[11px] text-gray-700 dark:text-gray-300">
 									Override destination with a custom URL (Pro only)
 								</span>
 							</label>
 						)}
 
 						{!useCustomDestination && (
-							<label className="flex flex-col gap-1">
-								<span className="text-[11px] font-medium text-muted-foreground">
-									Destination page
-								</span>
-								<select
-									value={destinationType}
-									onChange={(e) =>
-										setDestinationType(
-											e.target.value === "store" ? "store" : "checkout",
-										)
-									}
-									className="h-9 rounded-md border border-input bg-background px-3 text-[11px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-								>
-									<option value="checkout" disabled={!canCheckout}>
-										Checkout page{!canCheckout ? " (not available for this product)" : ""}
-									</option>
-									<option value="store" disabled={!canStore}>
-										Store page{!canStore ? " (not available for this product)" : ""}
-									</option>
-								</select>
-							</label>
+							<FrostedDropdown
+								label="Destination page"
+								value={destinationType}
+								onChange={(next) =>
+									setDestinationType(next === "store" ? "store" : "checkout")
+								}
+								options={destinationOptions}
+								className="text-[11px]"
+							/>
 						)}
 
 						{planId === "pro" && useCustomDestination && (
@@ -1288,14 +1356,14 @@ function AdvancedLinkModal({
 						)}
 
 						{canUseMetaPixel && destinationType === "checkout" && (
-							<label className="mt-1 inline-flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1">
+							<label className="mt-1 inline-flex items-center gap-2 rounded-md bg-gray-100 dark:bg-white/10 px-2 py-1">
 								<input
 									type="checkbox"
 									checked={metaPixelEnabled}
 									onChange={(event) => setMetaPixelEnabled(event.target.checked)}
-									className="h-3 w-3 rounded border-input text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+									className="h-3 w-3 rounded border-gray-300 dark:border-white/20 text-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								/>
-								<span className="text-[11px] text-muted-foreground">
+								<span className="text-[11px] text-gray-700 dark:text-gray-300">
 									Fire Meta Pixel for this checkout link
 								</span>
 							</label>
@@ -1303,38 +1371,32 @@ function AdvancedLinkModal({
 
 						{canUseUtmFields ? (
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-								<label className="flex flex-col gap-1">
-									<FrostedInput
-										label="UTM source"
-										type="text"
-										value={utmSource}
-										onChange={(e) => setUtmSource(e.target.value)}
-										placeholder="tiktok"
-										className="h-9 text-[11px]"
-									/>
-								</label>
+								<UTMAutocomplete
+									label="UTM source"
+									value={utmSource}
+									onChange={setUtmSource}
+									placeholder="tiktok"
+									field="source"
+									className="h-9 text-[11px]"
+								/>
 
-								<label className="flex flex-col gap-1">
-									<FrostedInput
-										label="UTM medium"
-										type="text"
-										value={utmMedium}
-										onChange={(e) => setUtmMedium(e.target.value)}
-										placeholder="cpc"
-										className="h-9 text-[11px]"
-									/>
-								</label>
+								<UTMAutocomplete
+									label="UTM medium"
+									value={utmMedium}
+									onChange={setUtmMedium}
+									placeholder="cpc"
+									field="medium"
+									className="h-9 text-[11px]"
+								/>
 
-								<label className="flex flex-col gap-1">
-									<FrostedInput
-										label="UTM campaign"
-										type="text"
-										value={utmCampaign}
-										onChange={(e) => setUtmCampaign(e.target.value)}
-										placeholder="summer_sale"
-										className="h-9 text-[11px]"
-									/>
-								</label>
+								<UTMAutocomplete
+									label="UTM campaign"
+									value={utmCampaign}
+									onChange={setUtmCampaign}
+									placeholder="summer_sale"
+									field="campaign"
+									className="h-9 text-[11px]"
+								/>
 							</div>
 						) : (
 							<div className="mt-1 rounded-md border border-dashed border-border/70 bg-muted/50 px-3 py-2 flex items-center justify-between gap-3">

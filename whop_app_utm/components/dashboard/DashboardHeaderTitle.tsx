@@ -26,6 +26,19 @@ export function DashboardHeaderTitle() {
 		return null;
 	}
 
+	if (pathname.includes("/analytics")) {
+		return (
+			<div className="space-y-1 text-center">
+				<h1 className="text-2xl sm:text-3xl lg:text-[32px] font-semibold tracking-tight text-foreground">
+					Analytics Dashboard
+				</h1>
+				<p className="text-sm sm:text-base text-muted-foreground">
+					Real-time UTM tracking and campaign performance across all links
+				</p>
+			</div>
+		);
+	}
+
 	if (title === "Dashboard") {
 		return (
 			<div className="space-y-1 text-center">

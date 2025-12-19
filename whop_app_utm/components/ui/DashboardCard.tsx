@@ -16,6 +16,7 @@ export function DashboardCard({ children, className }: CardProps) {
 				"shadow-[0_8px_32px_0_rgba(0,0,0,0.12)]",
 				"transition-all duration-200",
 				"hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.18)] hover:-translate-y-0.5",
+				"overflow-visible",
 				className ?? "",
 			].join(" ")}
 		>

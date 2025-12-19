@@ -408,7 +408,7 @@ const handleSubmit = async () => {
 
 ### Plan Badge
 ```tsx
-<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/10 backdrop-blur-xl border border-white/20">
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-xl border border-white/20">
   Pro
 </span>
 ```

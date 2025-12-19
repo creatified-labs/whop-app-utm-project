@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/client";
-import { advancedLinks, advancedLinkClicks, advancedLinkOrders } from "@/lib/db/schema";
+import { advancedLinks, advancedLinkSessions, advancedLinkOrders } from "@/lib/db/schema";
 import { sql, eq, and, gte } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
 		// Get clicks by date
 		const clicksByDate = await db
 			.select({
-				date: sql<string>`DATE(${advancedLinkClicks.createdAt})`,
+				date: sql<string>`DATE(${advancedLinkSessions.clickedAt})`,
 				clicks: sql<number>`COUNT(*)::int`,
 			})
-			.from(advancedLinkClicks)
-			.where(gte(advancedLinkClicks.createdAt, dateThreshold))
-			.groupBy(sql`DATE(${advancedLinkClicks.createdAt})`)
-			.orderBy(sql`DATE(${advancedLinkClicks.createdAt})`);
+			.from(advancedLinkSessions)
+			.where(gte(advancedLinkSessions.clickedAt, dateThreshold))
+			.groupBy(sql`DATE(${advancedLinkSessions.clickedAt})`)
+			.orderBy(sql`DATE(${advancedLinkSessions.clickedAt})`);
 
 		// Get revenue by date
 		const revenueByDate = await db
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
 				name: advancedLinks.name,
 				clicks: sql<number>`(
 					SELECT COUNT(*)::int 
-					FROM ${advancedLinkClicks} 
-					WHERE ${advancedLinkClicks.advancedLinkId} = ${advancedLinks.id}
-					AND ${advancedLinkClicks.createdAt} >= ${dateThreshold}
+					FROM ${advancedLinkSessions} 
+					WHERE ${advancedLinkSessions.advancedLinkId} = ${advancedLinks.id}
+					AND ${advancedLinkSessions.clickedAt} >= ${dateThreshold}
 				)`,
 				orders: sql<number>`(
 					SELECT COUNT(*)::int 
@@ -76,16 +76,16 @@ export async function GET(request: NextRequest) {
 		const topSources = await db
 			.select({
 				utmSource: advancedLinks.utmSource,
-				clicks: sql<number>`COUNT(DISTINCT ${advancedLinkClicks.id})::int`,
+				clicks: sql<number>`COUNT(DISTINCT ${advancedLinkSessions.id})::int`,
 				orders: sql<number>`COUNT(DISTINCT ${advancedLinkOrders.id})::int`,
 				revenue: sql<number>`COALESCE(SUM(${advancedLinkOrders.amountCents}), 0)::int`,
 			})
 			.from(advancedLinks)
 			.leftJoin(
-				advancedLinkClicks,
+				advancedLinkSessions,
 				and(
-					eq(advancedLinkClicks.advancedLinkId, advancedLinks.id),
-					gte(advancedLinkClicks.createdAt, dateThreshold)
+					eq(advancedLinkSessions.advancedLinkId, advancedLinks.id),
+					gte(advancedLinkSessions.clickedAt, dateThreshold)
 				)
 			)
 			.leftJoin(

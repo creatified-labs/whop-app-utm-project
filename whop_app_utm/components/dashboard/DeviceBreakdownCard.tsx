@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/ui/DashboardCard";
 import { Monitor, Smartphone, Tablet } from "lucide-react";
 
+type ModuleSize = "1x1" | "2x1" | "1x2" | "2x2";
+
 type DeviceBreakdown = {
 	deviceType: string;
 	count: number;
@@ -29,7 +31,11 @@ type BreakdownData = {
 	countries: CountryBreakdown[];
 };
 
-export function DeviceBreakdownCard() {
+interface DeviceBreakdownCardProps {
+	size?: ModuleSize;
+}
+
+export function DeviceBreakdownCard({ size = "1x1" }: DeviceBreakdownCardProps) {
 	const [data, setData] = useState<BreakdownData | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -96,20 +102,24 @@ export function DeviceBreakdownCard() {
 		}
 	};
 
+	const isCompact = size === "1x1";
+
 	return (
-		<DashboardCard className="h-full min-h-[280px] flex flex-col p-4 sm:p-5">
-			<div className="mb-4">
+		<DashboardCard className="h-full flex flex-col overflow-hidden p-4 sm:p-5">
+			<div className={`${isCompact ? 'mb-2' : 'mb-4'} flex-shrink-0`}>
 				<h3 className="text-sm font-semibold text-foreground">Device Breakdown</h3>
 				<p className="text-[10px] text-muted-foreground mt-0.5">
 					{data.totalSessions.toLocaleString()} total sessions
 				</p>
 			</div>
 
-			<div className="flex-1 space-y-3">
+			<div className="flex-1 min-h-0 overflow-y-auto space-y-3">
 				{/* Device Type Breakdown */}
 				<div>
-					<h4 className="text-xs font-medium text-muted-foreground mb-2">By Device</h4>
-					<div className="space-y-2">
+					<h4 className={`text-xs font-medium text-muted-foreground ${isCompact ? 'mb-1.5' : 'mb-2'}`}>
+						By Device
+					</h4>
+					<div className={`space-y-${isCompact ? '1.5' : '2'}`}>
 						{data.devices.map((device) => (
 							<div key={device.deviceType} className="flex items-center gap-2">
 								<div className="flex items-center gap-2 flex-1 min-w-0">
@@ -136,8 +146,8 @@ export function DeviceBreakdownCard() {
 					</div>
 				</div>
 
-				{/* Browser Breakdown */}
-				{data.browsers.length > 0 && (
+				{/* Browser Breakdown - Hide in compact mode if space is tight */}
+				{!isCompact && data.browsers.length > 0 && (
 					<div className="pt-3 border-t border-white/5">
 						<h4 className="text-xs font-medium text-muted-foreground mb-2">Top Browsers</h4>
 						<div className="space-y-1.5">
@@ -155,8 +165,8 @@ export function DeviceBreakdownCard() {
 					</div>
 				)}
 
-				{/* Country Breakdown */}
-				{data.countries.length > 0 && (
+				{/* Country Breakdown - Hide in compact mode if space is tight */}
+				{!isCompact && data.countries.length > 0 && (
 					<div className="pt-3 border-t border-white/5">
 						<h4 className="text-xs font-medium text-muted-foreground mb-2">Top Countries</h4>
 						<div className="space-y-1.5">

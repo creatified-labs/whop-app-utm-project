@@ -12,6 +12,8 @@ export async function POST(req: NextRequest) {
 				utm_source?: string;
 				utm_medium?: string;
 				utm_campaign?: string;
+				utm_content?: string;
+				utm_term?: string;
 				session_token?: string;
 			};
 		} | null;
@@ -61,6 +63,8 @@ export async function POST(req: NextRequest) {
 					utm_source: metadata.utm_source || null,
 					utm_medium: metadata.utm_medium || null,
 					utm_campaign: metadata.utm_campaign || null,
+					utm_content: metadata.utm_content || null,
+					utm_term: metadata.utm_term || null,
 					session_token: metadata.session_token || null,
 				},
 			}),
@@ -71,6 +75,8 @@ export async function POST(req: NextRequest) {
 			utm_source: metadata.utm_source,
 			utm_medium: metadata.utm_medium,
 			utm_campaign: metadata.utm_campaign,
+			utm_content: metadata.utm_content,
+			utm_term: metadata.utm_term,
 			session_token: metadata.session_token,
 		});
 

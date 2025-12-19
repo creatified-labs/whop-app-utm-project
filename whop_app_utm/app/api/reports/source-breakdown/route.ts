@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/client";
-import { advancedLinks, advancedLinkClicks, advancedLinkOrders } from "@/lib/db/schema";
+import { advancedLinks, advancedLinkSessions, advancedLinkOrders } from "@/lib/db/schema";
 import { sql, and, gte, lte, isNotNull } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -22,17 +22,17 @@ export async function GET(request: NextRequest) {
 		const sourceData = await db
 			.select({
 				utmSource: advancedLinks.utmSource,
-				clicks: sql<number>`COUNT(DISTINCT ${advancedLinkClicks.id})::int`,
+				clicks: sql<number>`COUNT(DISTINCT ${advancedLinkSessions.id})::int`,
 				orders: sql<number>`COUNT(DISTINCT ${advancedLinkOrders.id})::int`,
 				revenue: sql<number>`COALESCE(SUM(${advancedLinkOrders.amountCents}), 0)::int`,
 			})
 			.from(advancedLinks)
 			.leftJoin(
-				advancedLinkClicks,
+				advancedLinkSessions,
 				and(
-					sql`${advancedLinkClicks.advancedLinkId} = ${advancedLinks.id}`,
-					...(startDate ? [gte(advancedLinkClicks.createdAt, new Date(startDate))] : []),
-					...(endDate ? [lte(advancedLinkClicks.createdAt, new Date(endDate))] : [])
+					sql`${advancedLinkSessions.advancedLinkId} = ${advancedLinks.id}`,
+					...(startDate ? [gte(advancedLinkSessions.clickedAt, new Date(startDate))] : []),
+					...(endDate ? [lte(advancedLinkSessions.clickedAt, new Date(endDate))] : [])
 				)
 			)
 			.leftJoin(

@@ -30,6 +30,7 @@ type LinksTableProps = {
 	onRestoreLink?: (id: string) => void;
 	onDeleteLink?: (id: string) => void;
 	isArchivedView?: boolean;
+	onLinkClick?: (link: TrackingLink, metrics?: LinkMetrics) => void;
 };
 
 const COLUMN_MIN_WIDTHS: Record<ResizableColumnKey, number> = {
@@ -56,6 +57,7 @@ export function LinksTable({
 	onRestoreLink,
 	onDeleteLink,
 	isArchivedView,
+	onLinkClick,
 }: LinksTableProps) {
 	const { links } = useUtmData();
 	const linkMetrics = useLinkMetrics();
@@ -137,11 +139,9 @@ export function LinksTable({
 		{ key: "convertedUsers", label: "Converted users" },
 	];
 
-	const effectiveLinks =
-		mode === "advanced" && linksOverride ? linksOverride : links;
+	const effectiveLinks = linksOverride ?? links;
 
-	const effectiveMetrics =
-		mode === "advanced" && metricsOverride ? metricsOverride : linkMetrics;
+	const effectiveMetrics = metricsOverride ?? linkMetrics;
 
 	const rows = effectiveLinks.map((link) => ({
 		link,
@@ -149,13 +149,13 @@ export function LinksTable({
 	}));
 
 	return (
-		<div className="mt-4 w-full min-h-[70vh] rounded-2xl bg-white/5 dark:bg-black/5 backdrop-blur-xl border border-white/10 dark:border-white/5 flex flex-col overflow-hidden">
+		<div className="mt-4 w-full min-h-[70vh] rounded-2xl bg-white/5 dark:bg-[#0b0b0b] backdrop-blur-xl border border-white/10 dark:border-white/10 flex flex-col overflow-hidden">
 			<div className="w-full flex-1 overflow-x-auto">
 				<table className="links-table w-full h-full table-fixed text-sm text-card-foreground border-separate border-spacing-0">
-					<thead className="bg-white/5 dark:bg-black/5 backdrop-blur-xl">
-						<tr className="text-[11px] uppercase tracking-[0.16em] text-black dark:text-white">
+					<thead className="bg-white/5 dark:bg-[#131313] backdrop-blur-xl relative after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-px after:bg-white/10 after:z-40 after:pointer-events-none">
+						<tr className="text-[11px] uppercase tracking-[0.16em] text-gray-900 dark:text-white">
 							<th
-								className="sticky left-0 z-30 px-4 py-2 text-left bg-white/10 dark:bg-black/10 backdrop-blur-2xl relative border-r border-b-2 border-border"
+								className="sticky left-0 z-30 px-4 py-2 text-left bg-white dark:bg-[#131313] relative border-r border-transparent dark:border-r-transparent border-b border-transparent dark:border-b-transparent after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-px after:bg-white/10 after:pointer-events-none"
 								style={{ width: columnWidths.name }}
 							>
 								<span className="block whitespace-nowrap">Name</span>
@@ -163,10 +163,11 @@ export function LinksTable({
 									className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20"
 									onMouseDown={(event) => handleColumnResizeStart("name", event)}
 								/>
+								<span className="pointer-events-none absolute right-0 top-0 h-full w-px bg-transparent dark:bg-transparent" />
 							</th>
 							{visibleColumns.product && (
 								<th
-									className="sticky z-30 px-4 py-2 text-left bg-white/10 dark:bg-black/10 backdrop-blur-2xl relative border-r border-b-2 border-border"
+									className="sticky z-30 px-4 py-2 text-left bg-white dark:bg-[#131313] relative border-r border-white/10 border-b border-transparent dark:border-b-transparent after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-px after:bg-white/10 after:pointer-events-none"
 									style={{
 										width: columnWidths.product,
 										left: columnWidths.name,
@@ -179,11 +180,12 @@ export function LinksTable({
 										className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20"
 										onMouseDown={(event) => handleColumnResizeStart("product", event)}
 									/>
+									<span className="pointer-events-none absolute right-0 top-0 h-full w-px bg-white/10" />
 								</th>
 							)}
 							{visibleColumns.plan && (
 								<th
-									className="relative px-4 py-2 text-left border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-white/10 border-b border-white/10"
 									style={{ width: columnWidths.plan }}
 								>
 									<span className="block whitespace-nowrap">Plan</span>
@@ -195,7 +197,7 @@ export function LinksTable({
 							)}
 							{visibleColumns.url && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-b border-white/10"
 									style={{ width: columnWidths.url }}
 								>
 									<span className="block whitespace-nowrap">URL</span>
@@ -207,7 +209,7 @@ export function LinksTable({
 							)}
 							{visibleColumns.destination && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-b border-white/10"
 									style={{ width: columnWidths.destination }}
 								>
 									<span className="block whitespace-nowrap">Destination</span>
@@ -219,7 +221,7 @@ export function LinksTable({
 							)}
 							{mode === "advanced" && visibleColumns.utmSource && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.utmSource }}
 								>
 									<span className="block whitespace-nowrap">UTM source</span>
@@ -231,7 +233,7 @@ export function LinksTable({
 							)}
 							{mode === "advanced" && visibleColumns.utmMedium && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.utmMedium }}
 								>
 									<span className="block whitespace-nowrap">UTM medium</span>
@@ -243,7 +245,7 @@ export function LinksTable({
 							)}
 							{mode === "advanced" && visibleColumns.utmCampaign && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-b border-white/10"
 									style={{ width: columnWidths.utmCampaign }}
 								>
 									<span className="block whitespace-nowrap">UTM campaign</span>
@@ -255,7 +257,7 @@ export function LinksTable({
 							)}
 							{mode === "advanced" && visibleColumns.dateCreated && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.dateCreated }}
 								>
 									<span className="block whitespace-nowrap">Date created</span>
@@ -267,7 +269,7 @@ export function LinksTable({
 							)}
 							{visibleColumns.clicks && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.clicks }}
 								>
 									<span className="block whitespace-nowrap">Clicks</span>
@@ -279,7 +281,7 @@ export function LinksTable({
 							)}
 							{visibleColumns.revenue && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.revenue }}
 								>
 									<span className="block whitespace-nowrap">Revenue generated</span>
@@ -291,7 +293,7 @@ export function LinksTable({
 							)}
 							{visibleColumns.conversion && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.conversion }}
 								>
 									<span className="block whitespace-nowrap">Conversion rate</span>
@@ -303,7 +305,7 @@ export function LinksTable({
 							)}
 							{visibleColumns.convertedUsers && (
 								<th
-									className="relative px-4 py-2 text-left border-l border-b-2 border-border"
+									className="relative px-4 py-2 text-left border-l border-transparent dark:border-l-transparent border-b border-white/10"
 									style={{ width: columnWidths.convertedUsers }}
 								>
 									<span className="block whitespace-nowrap">Converted users</span>
@@ -313,7 +315,7 @@ export function LinksTable({
 									/>
 								</th>
 							)}
-							<th className="sticky right-0 z-20 w-12 px-4 py-2 text-right align-middle whitespace-nowrap bg-card relative">
+							<th className="sticky right-0 z-20 w-12 px-4 py-2 text-right align-middle whitespace-nowrap bg-white dark:bg-[#131313] relative border-l border-white/10 border-b border-white/10 shadow-[ -14px_0_18px_rgba(255,255,255,0.75)] dark:shadow-[ -14px_0_18px_rgba(0,0,0,0.6)]">
 								<div className="flex justify-center">
 									<button
 										type="button"
@@ -322,7 +324,7 @@ export function LinksTable({
 									>
 										··
 									</button>
-									<span className="pointer-events-none absolute left-0 top-0 bottom-0 w-[2px] bg-border" />
+									<span className="pointer-events-none absolute left-0 top-0 bottom-0 w-px bg-white/10" />
 									{isSettingsOpen && (
 										<div className="absolute right-2 top-9 z-40 w-56 rounded-xl border border-border bg-popover text-popover-foreground shadow-[var(--glass-shadow)] text-xs overflow-hidden">
 											<div className="px-3 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground bg-muted/40 border-b border-border">
@@ -361,7 +363,6 @@ export function LinksTable({
 										</div>
 									)}
 								</div>
-								<span className="pointer-events-none absolute left-0 top-0 bottom-0 w-px bg-border" />
 							</th>
 						</tr>
 					</thead>
@@ -378,11 +379,12 @@ export function LinksTable({
 								onRestoreLink={onRestoreLink}
 								onDeleteLink={onDeleteLink}
 								isArchivedView={isArchivedView}
+								onLinkClick={() => onLinkClick?.(link, metrics)}
 							/>
 						))}
 					</tbody>
 				</table>
-			</div>
-		</div>
+			</div >
+		</div >
 	);
 }

@@ -116,13 +116,19 @@ export const advancedLinkOrders = pgTable("advanced_link_orders", {
 	advancedLinkId: text("advanced_link_id")
 		.notNull()
 		.references(() => advancedLinks.id, { onDelete: "cascade" }),
+	whopOrderId: text("whop_order_id"),
 	amountCents: integer("amount_cents").notNull(),
 	currency: text("currency").notNull(),
 	utmSource: text("utm_source"),
 	utmMedium: text("utm_medium"),
 	utmCampaign: text("utm_campaign"),
+	utmContent: text("utm_content"),
+	utmTerm: text("utm_term"),
 	whopUserId: text("whop_user_id"),
-	sessionId: text("session_id"),
+	sessionToken: text("session_token"),
+	deviceType: text("device_type"),
+	browser: text("browser"),
+	countryCode: text("country_code"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
@@ -136,16 +142,28 @@ export const advancedLinkSessions = pgTable("advanced_link_sessions", {
 	utmSource: text("utm_source"),
 	utmMedium: text("utm_medium"),
 	utmCampaign: text("utm_campaign"),
+	utmContent: text("utm_content"),
+	utmTerm: text("utm_term"),
 	sessionToken: text("session_token").notNull().unique(),
 	deviceType: text("device_type"),
 	browser: text("browser"),
+	browserVersion: text("browser_version"),
 	os: text("os"),
+	osVersion: text("os_version"),
 	countryCode: text("country_code"),
+	countryName: text("country_name"),
+	city: text("city"),
+	ipHash: text("ip_hash"),
+	referrer: text("referrer"),
+	userAgent: text("user_agent"),
 	clickedAt: timestamp("clicked_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
 	convertedAt: timestamp("converted_at", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { Archive, Link2, Settings } from "lucide-react";
+import { Archive, Link2, Settings, ArrowUpRight } from "lucide-react";
 import type { TrackingLink, LinkMetrics } from "@/lib/utm/types";
 
 export type VisibleColumns = {
@@ -27,6 +27,7 @@ export function LinksTableRow({
 	onRestoreLink,
 	onDeleteLink,
 	isArchivedView,
+	onLinkClick,
 }: {
 	link: TrackingLink;
 	metrics?: LinkMetrics;
@@ -37,6 +38,7 @@ export function LinksTableRow({
 	onRestoreLink?: (id: string) => void;
 	onDeleteLink?: (id: string) => void;
 	isArchivedView?: boolean;
+	onLinkClick?: () => void;
 }) {
 	const {
 		name,
@@ -156,10 +158,10 @@ export function LinksTableRow({
 	};
 
 	return (
-		<tr className="transition-colors hover:bg-white/5 dark:hover:bg-white/[0.02]">
+		<tr className="bg-white dark:bg-[#0f0f0f] border-b border-white/10 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-white/5">
 			{/* Name */}
 			<td
-				className="sticky left-0 z-10 px-4 py-3 align-top bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-transparent relative"
+				className="sticky left-0 z-20 px-4 py-3 align-top bg-white dark:bg-[#0f0f0f] border-r border-transparent dark:border-transparent relative"
 				style={{ width: columnWidths.name }}
 			>
 				<div className="flex flex-col gap-1 min-w-0">
@@ -167,6 +169,17 @@ export function LinksTableRow({
 						<span className="truncate font-medium text-foreground">
 							{name}
 						</span>
+						{/* View details button - only for advanced links */}
+						{mode === "advanced" && (
+							<button
+								type="button"
+								onClick={onLinkClick}
+								className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+								title="View details"
+							>
+								<ArrowUpRight className="h-3.5 w-3.5" />
+							</button>
+						)}
 						{mode === "advanced" && link.metaPixelEnabled && (
 							<span className="shrink-0 inline-flex items-center rounded-full border border-emerald-400/60 bg-emerald-400/5 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
 								Meta Pixel
@@ -179,7 +192,7 @@ export function LinksTableRow({
 			{/* Product */}
 			{visibleColumns.product && (
 				<td
-					className="sticky z-10 px-4 py-3 align-top text-sm text-muted-foreground bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-transparent relative"
+					className="sticky z-20 px-4 py-3 align-top text-sm text-muted-foreground bg-white dark:bg-[#0f0f0f] border-r border-[#c1c8d8] dark:border-white/10 relative"
 					style={{
 						width: columnWidths.product,
 						left: columnWidths.name,
@@ -193,21 +206,21 @@ export function LinksTableRow({
 
 			{/* Plan */}
 			{visibleColumns.plan && (
-				<td className="px-4 py-3 align-top text-sm text-muted-foreground border-b border-transparent">
+				<td className="px-4 py-3 align-top text-sm text-muted-foreground border-l border-[#c1c8d8] dark:border-white/10">
 					<span className="block truncate">{planLabel}</span>
 				</td>
 			)}
 
 			{/* URL */}
 			{visibleColumns.url && (
-				<td className="px-4 py-3 align-top text-sm text-muted-foreground border-b border-transparent max-w-0 overflow-hidden">
+				<td className="px-4 py-3 align-top text-sm text-muted-foreground border-r border-transparent dark:border-transparent max-w-0 overflow-hidden">
 					<div className="flex items-center gap-1 max-w-full">
 						<span className="block truncate whitespace-nowrap">{displayUrl}</span>
 						<button
 							type="button"
 							aria-label="Copy link"
 							className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-colors"
-							onClick={handleCopyUrl}
+							onClick={(e) => { e.stopPropagation(); handleCopyUrl(); }}
 						>
 							<Link2 className="h-3 w-3" />
 						</button>
@@ -222,7 +235,7 @@ export function LinksTableRow({
 
 			{/* Destination */}
 			{visibleColumns.destination && (
-				<td className="px-4 py-3 align-top border-b border-transparent max-w-0 overflow-hidden">
+				<td className="px-4 py-3 align-top border-r border-transparent dark:border-transparent max-w-0 overflow-hidden">
 					<p className="truncate whitespace-nowrap text-sm text-muted-foreground">
 						{destinationTag ? (
 							<span className={destinationTag.className}>{destinationTag.label}</span>
@@ -235,7 +248,7 @@ export function LinksTableRow({
 
 			{/* UTM source */}
 			{mode === "advanced" && visibleColumns.utmSource && (
-				<td className="px-4 py-3 align-top border-b border-transparent max-w-0 overflow-hidden">
+				<td className="px-4 py-3 align-top border-r border-transparent dark:border-transparent max-w-0 overflow-hidden">
 					<span className="block truncate whitespace-nowrap text-sm text-muted-foreground">
 						{link.utmSource ?? "—"}
 					</span>
@@ -244,7 +257,7 @@ export function LinksTableRow({
 
 			{/* UTM medium */}
 			{mode === "advanced" && visibleColumns.utmMedium && (
-				<td className="px-4 py-3 align-top border-b border-transparent max-w-0 overflow-hidden">
+				<td className="px-4 py-3 align-top border-r border-transparent dark:border-transparent max-w-0 overflow-hidden">
 					<span className="block truncate whitespace-nowrap text-sm text-muted-foreground">
 						{link.utmMedium ?? "—"}
 					</span>
@@ -253,7 +266,7 @@ export function LinksTableRow({
 
 			{/* UTM campaign */}
 			{mode === "advanced" && visibleColumns.utmCampaign && (
-				<td className="px-4 py-3 align-top border-b border-transparent max-w-0 overflow-hidden">
+				<td className="px-4 py-3 align-top border-r border-transparent dark:border-transparent max-w-0 overflow-hidden">
 					<span className="block truncate whitespace-nowrap text-sm text-muted-foreground">
 						{link.utmCampaign ?? "—"}
 					</span>
@@ -262,7 +275,7 @@ export function LinksTableRow({
 
 			{/* Date Created */}
 			{mode === "advanced" && visibleColumns.dateCreated && (
-				<td className="px-4 py-3 align-top border-b border-transparent max-w-0 overflow-hidden">
+				<td className="px-4 py-3 align-top border-r border-transparent dark:border-transparent max-w-0 overflow-hidden">
 					<span className="block truncate whitespace-nowrap text-sm text-muted-foreground">
 						{link.createdAt
 							? new Date(link.createdAt).toLocaleDateString("en-US", {
@@ -277,40 +290,39 @@ export function LinksTableRow({
 
 			{/* Clicks */}
 			{visibleColumns.clicks && (
-				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-foreground border-b border-transparent">
+				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-foreground border-r border-transparent dark:border-transparent">
 					{clicks.toLocaleString()}
 				</td>
 			)}
 
 			{/* Revenue generated */}
 			{visibleColumns.revenue && (
-				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-foreground border-b border-transparent">
+				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-foreground border-r border-transparent dark:border-transparent">
 					{formattedRevenue}
 				</td>
 			)}
 
 			{/* Conversion rate */}
 			{visibleColumns.conversion && (
-				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-muted-foreground border-b border-transparent">
+				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-muted-foreground border-r border-transparent dark:border-transparent">
 					{formattedConversion}
 				</td>
 			)}
-
 			{/* Converted users */}
 			{visibleColumns.convertedUsers && (
-				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-muted-foreground border-b border-transparent">
+				<td className="px-4 py-3 align-top text-right text-sm tabular-nums text-muted-foreground border-r border-transparent dark:border-transparent">
 					{convertedUsers.toLocaleString()}
 				</td>
 			)}
 
 			{/* Actions */}
-			<td className="sticky right-0 z-10 w-12 px-4 py-3 align-middle text-right bg-card border-b border-transparent relative">
+			<td className="sticky right-0 z-10 w-12 px-4 py-3 align-middle text-right bg-white dark:bg-[#131313] border-l border-[#c1c8d8] dark:border-white/10 relative overflow-hidden">
 				<div className="flex justify-center gap-1.5 relative">
 					{mode === "advanced" && !isArchivedView && onArchiveLink && (
 						<button
 							type="button"
 							className="inline-flex h-6 aspect-square items-center justify-center rounded-full bg-transparent text-muted-foreground hover:bg-accent/40 dark:hover:bg-accent/60 transition-colors"
-							onClick={() => onArchiveLink(link.id)}
+							onClick={(e) => { e.stopPropagation(); onArchiveLink(link.id); }}
 						>
 							<Archive className="h-3.5 w-3.5" />
 						</button>
@@ -321,7 +333,7 @@ export function LinksTableRow({
 							<button
 								type="button"
 								className="inline-flex h-6 aspect-square items-center justify-center rounded-full bg-transparent text-muted-foreground hover:bg-accent/40 dark:hover:bg-accent/60 transition-colors"
-								onClick={() => setIsActionsOpen((open) => !open)}
+								onClick={(e) => { e.stopPropagation(); setIsActionsOpen((open) => !open); }}
 							>
 								<Settings className="h-3.5 w-3.5" />
 							</button>
@@ -330,7 +342,8 @@ export function LinksTableRow({
 									{onRestoreLink && (
 										<button
 											type="button"
-											onClick={() => {
+											onClick={(e) => {
+												e.stopPropagation();
 												onRestoreLink(link.id);
 												setIsActionsOpen(false);
 											}}
@@ -342,7 +355,8 @@ export function LinksTableRow({
 									{onDeleteLink && (
 										<button
 											type="button"
-											onClick={() => {
+											onClick={(e) => {
+												e.stopPropagation();
 												onDeleteLink(link.id);
 												setIsActionsOpen(false);
 											}}
@@ -356,7 +370,8 @@ export function LinksTableRow({
 						</>
 					)}
 				</div>
-				<span className="pointer-events-none absolute left-0 top-0 bottom-0 w-[2px] bg-border" />
+				<span className="pointer-events-none absolute left-0 top-0 bottom-0 w-px bg-[#c1c8d8] dark:bg-white/10" />
+				<span className="pointer-events-none absolute inset-y-0 right-0 w-4 bg-white/40 dark:hidden" />
 			</td>
 		</tr>
 	);

@@ -5,7 +5,7 @@ import { db } from "@/lib/db/client";
 import { companySettings, advancedLinkSessions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { parseUserAgent, getCountryFromIP } from "@/lib/device-detection";
+import { parseUserAgent, getGeoInfo } from "@/lib/device-detection";
 
 export async function GET(
 	req: NextRequest,
@@ -62,18 +62,23 @@ export async function GET(
 				const sessionToken = randomUUID();
 				const deviceInfo = parseUserAgent(userAgent);
 
-				// Try to get country from IP (async, but don't block redirect)
-				let countryCode: string | null = null;
+				// Try to get geo info from IP (async, but don't block redirect)
+				let geoInfo: { countryCode: string | null; countryName: string | null; city: string | null } = {
+					countryCode: null,
+					countryName: null,
+					city: null
+				};
 				try {
 					// First check Cloudflare header (if behind Cloudflare)
-					countryCode = req.headers.get("cf-ipcountry") ?? null;
-
-					// If not available, try IP geolocation API
-					if (!countryCode) {
-						countryCode = await getCountryFromIP(ip);
+					const cfCountry = req.headers.get("cf-ipcountry");
+					if (cfCountry) {
+						geoInfo.countryCode = cfCountry;
+					} else {
+						// If not available, try IP geolocation API
+						geoInfo = await getGeoInfo(ip);
 					}
 				} catch (error) {
-					console.warn("[t/[slug]] Failed to get country code:", error);
+					console.warn("[t/[slug]] Failed to get geo info:", error);
 				}
 
 				// Extract UTM params from advanced link
@@ -88,18 +93,35 @@ export async function GET(
 						utmSource,
 						utmMedium,
 						utmCampaign,
+						utmContent: null,
+						utmTerm: null,
 						sessionToken,
 						deviceType: deviceInfo.deviceType,
 						browser: deviceInfo.browser,
+						browserVersion: deviceInfo.browserVersion,
 						os: deviceInfo.os,
-						countryCode,
+						osVersion: deviceInfo.osVersion,
+						countryCode: geoInfo.countryCode,
+						countryName: geoInfo.countryName,
+						city: geoInfo.city,
+						ipHash,
+						referrer,
+						userAgent,
 					});
 					console.log("[t/[slug]] Session created:", {
 						sessionToken,
+						linkId: (advancedLink as { id: string }).id,
+						utmSource,
+						utmMedium,
+						utmCampaign,
 						deviceType: deviceInfo.deviceType,
 						browser: deviceInfo.browser,
+						browserVersion: deviceInfo.browserVersion,
 						os: deviceInfo.os,
-						countryCode,
+						osVersion: deviceInfo.osVersion,
+						countryCode: geoInfo.countryCode,
+						countryName: geoInfo.countryName,
+						city: geoInfo.city,
 					});
 				} catch (error) {
 					console.error("[t/[slug]] Failed to create session:", error);

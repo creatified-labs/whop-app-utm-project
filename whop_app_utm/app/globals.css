@@ -123,6 +123,24 @@ body {
 	position: relative;
 }
 
+/* Layout shell responsive container */
+.layout-shell {
+	width: 100%;
+	margin: 0 auto;
+}
+
+/* Ensure grid items are properly sized on all screens */
+.react-grid-item {
+	transition: all 200ms ease;
+	transition-property: left, top, width, height;
+}
+
+.react-grid-item>* {
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
 .react-grid-placeholder {
 	background: rgba(148, 163, 184, 0.12);
 	/* neutral slate-like ghost */

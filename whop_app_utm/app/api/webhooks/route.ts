@@ -519,6 +519,8 @@ async function syncAdvancedOrderFromPayload(payload: any, context: string) {
 				utmSource: typeof metadata.utm_source === "string" ? metadata.utm_source : null,
 				utmMedium: typeof metadata.utm_medium === "string" ? metadata.utm_medium : null,
 				utmCampaign: typeof metadata.utm_campaign === "string" ? metadata.utm_campaign : null,
+				utmContent: typeof metadata.utm_content === "string" ? metadata.utm_content : null,
+				utmTerm: typeof metadata.utm_term === "string" ? metadata.utm_term : null,
 				sessionToken: typeof metadata.session_token === "string" ? metadata.session_token : null,
 			};
 		};
@@ -537,29 +539,46 @@ async function syncAdvancedOrderFromPayload(payload: any, context: string) {
 			);
 		};
 
-		const { utmSource, utmMedium, utmCampaign, sessionToken } = extractMetadata(payload);
+		const { utmSource, utmMedium, utmCampaign, utmContent, utmTerm, sessionToken } = extractMetadata(payload);
 		const whopUserId = extractWhopUserId(payload);
+
+		// Extract whop_order_id from payload
+		const whopOrderId: string | null =
+			root?.data?.id ??
+			root?.data?.order?.id ??
+			root?.order?.id ??
+			root?.id ??
+			null;
 
 		// Insert order with UTM data
 		await db.insert(advancedLinkOrders).values({
 			advancedLinkId,
+			whopOrderId,
 			amountCents,
 			currency,
 			utmSource,
 			utmMedium,
 			utmCampaign,
+			utmContent,
+			utmTerm,
 			whopUserId,
-			sessionId: sessionToken,
+			sessionToken,
+			deviceType: null,
+			browser: null,
+			countryCode: null,
 		});
 
 		console.log("[ADVANCED ORDER UPSERTED]", {
 			context,
 			advancedLinkId,
+			whopOrderId,
 			amountCents,
 			currency,
 			utmSource,
 			utmMedium,
 			utmCampaign,
+			utmContent,
+			utmTerm,
 			whopUserId,
 			sessionToken,
 		});

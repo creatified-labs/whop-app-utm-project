@@ -110,22 +110,103 @@ export function useLinkMetrics(): LinkMetrics[] {
 	);
 }
 
-export function useSourceMetrics(): SourceMetrics[] {
-	const { links, events, orders } = useUtmData();
+const DEFAULT_DATE_RANGE_DAYS = 30;
 
-	return useMemo(
-		() => getSourceMetrics(links, events, orders),
-		[links, events, orders],
-	);
+function buildDateParams(days: number) {
+	const now = new Date();
+	const endDate = now.toISOString().split("T")[0];
+	const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+		.toISOString()
+		.split("T")[0];
+	const params = new URLSearchParams();
+	params.append("startDate", startDate);
+	params.append("endDate", endDate);
+	return params.toString();
 }
 
-export function useCampaignMetrics(): CampaignMetrics[] {
-	const { links, events, orders } = useUtmData();
+export function useSourceMetrics(rangeDays = DEFAULT_DATE_RANGE_DAYS): SourceMetrics[] {
+	const [metrics, setMetrics] = useState<SourceMetrics[]>([]);
 
-	return useMemo(
-		() => getCampaignMetrics(links, events, orders),
-		[links, events, orders],
-	);
+	useEffect(() => {
+		let cancelled = false;
+
+		async function load() {
+			try {
+				const query = buildDateParams(rangeDays);
+				const res = await fetch(`/api/reports/source-breakdown?${query}`);
+				if (!res.ok) throw new Error("Failed to fetch source breakdown");
+
+				const data = (await res.json()) as { breakdown?: Array<{ source: string; clicks: number; orders: number; revenue: number }> };
+				if (cancelled) return;
+
+				const breakdown = Array.isArray(data.breakdown) ? data.breakdown : [];
+				setMetrics(
+					breakdown.map((row) => ({
+						utmSource: row.source,
+						clicks: row.clicks ?? 0,
+						orders: row.orders ?? 0,
+						revenue: row.revenue ?? 0,
+					})),
+				);
+			} catch (error) {
+				console.error("[useSourceMetrics] Failed to load source metrics", error);
+				if (!cancelled) {
+					setMetrics([]);
+				}
+			}
+		}
+
+		void load();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [rangeDays]);
+
+	return metrics;
+}
+
+export function useCampaignMetrics(rangeDays = DEFAULT_DATE_RANGE_DAYS): CampaignMetrics[] {
+	const [metrics, setMetrics] = useState<CampaignMetrics[]>([]);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function load() {
+			try {
+				const query = buildDateParams(rangeDays);
+				const res = await fetch(`/api/reports/campaign-breakdown?${query}`);
+				if (!res.ok) throw new Error("Failed to fetch campaign breakdown");
+
+				const data = (await res.json()) as { breakdown?: Array<{ campaign: string; clicks: number; orders: number; revenue: number; conversionRate: number }> };
+				if (cancelled) return;
+
+				const breakdown = Array.isArray(data.breakdown) ? data.breakdown : [];
+				setMetrics(
+					breakdown.map((row) => ({
+						utmCampaign: row.campaign,
+						clicks: row.clicks ?? 0,
+						orders: row.orders ?? 0,
+						revenue: row.revenue ?? 0,
+						conversionRate: (row.conversionRate ?? 0) / 100,
+					})),
+				);
+			} catch (error) {
+				console.error("[useCampaignMetrics] Failed to load campaign metrics", error);
+				if (!cancelled) {
+					setMetrics([]);
+				}
+			}
+		}
+
+		void load();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [rangeDays]);
+
+	return metrics;
 }
 
 export function useDeviceMetrics(): DeviceMetrics[] {

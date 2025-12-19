@@ -16,7 +16,7 @@ export async function GET() {
 			.from(advancedLinkSessions)
 			.leftJoin(
 				advancedLinkOrders,
-				eq(advancedLinkSessions.sessionToken, advancedLinkOrders.sessionId)
+				eq(advancedLinkSessions.sessionToken, advancedLinkOrders.sessionToken)
 			)
 			.groupBy(advancedLinkSessions.deviceType);
 
